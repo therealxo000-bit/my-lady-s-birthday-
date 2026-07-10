@@ -680,8 +680,9 @@
 
   .gallery{
     display:grid;
-    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 22px;
+    align-items: start;
   }
 
   .polaroid{
@@ -695,28 +696,32 @@
 
   .polaroid:nth-child(2n){ --r: 3deg; }
   .polaroid:nth-child(3n){ --r: -1.5deg; }
-  .polaroid:hover{ transform: rotate(0deg) scale(1.04); }
+
+  .polaroid:hover{
+    transform: rotate(0deg) scale(1.04);
+  }
 
   .photo-slot{
     width:100%;
     aspect-ratio: 1 / 1.15;
     border-radius: 2px;
     background: linear-gradient(135deg, var(--rose), var(--plum));
+    overflow: hidden;
     display:flex;
     align-items:center;
     justify-content:center;
-    color: rgba(255,255,255,0.75);
-    font-size: 12px;
-    text-align:center;
-    padding: 0;
-    overflow: hidden;
+    cursor: pointer;
+    position: relative;
   }
 
   .photo-slot img{
-    width: 100%;
-    height: 100%;
+    width:100%;
+    height:100%;
     object-fit: cover;
     display:block;
+    user-select: none;
+    -webkit-user-drag: none;
+    touch-action: manipulation;
   }
 
   .caption{
@@ -800,6 +805,62 @@
     color: var(--gold);
     font-family:'Cormorant Garamond', serif;
     font-size: 24px;
+  }
+
+  .image-viewer{
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 6, 18, 0.94);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 20000;
+    backdrop-filter: blur(8px);
+  }
+
+  .image-viewer.show{
+    display: flex;
+  }
+
+  .image-viewer img{
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 14px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.45);
+  }
+
+  .viewer-close{
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    width: 46px;
+    height: 46px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.10);
+    color: var(--cream);
+    font-size: 24px;
+    cursor: pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .viewer-hint{
+    position: absolute;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--blush);
+    font-size: 14px;
+    background: rgba(255,255,255,0.08);
+    padding: 10px 16px;
+    border-radius: 999px;
+    text-align: center;
   }
 
   @media (max-width: 700px){
@@ -887,6 +948,20 @@
 
     .gallery{
       grid-template-columns: 1fr;
+    }
+
+    .image-viewer{
+      padding: 14px;
+    }
+
+    .image-viewer img{
+      max-width: 100%;
+      max-height: 82vh;
+    }
+
+    .viewer-hint{
+      font-size: 13px;
+      width: calc(100% - 28px);
     }
   }
 
@@ -1051,28 +1126,32 @@
     </div>
 
     <div class="section-title">“ Let me share some lovely memories with you ”</div>
+
     <div class="gallery">
       <div class="polaroid">
         <div class="photo-slot">
-          <img src="./first-meet.jpg" alt="First meet memory">
+          <img class="gallery-image" src="https://raw.githubusercontent.com/therealxo000-bit/my-lady-s-birthday-/main/first%20meet.jpeg" alt="First meet">
         </div>
         <div class="caption">first meet</div>
       </div>
+
       <div class="polaroid">
         <div class="photo-slot">
-          <img src="./first-pic.jpg" alt="First picture together">
+          <img class="gallery-image" src="https://raw.githubusercontent.com/therealxo000-bit/my-lady-s-birthday-/main/first%20pic.jpeg" alt="First pic together">
         </div>
         <div class="caption">first pic together</div>
       </div>
+
       <div class="polaroid">
         <div class="photo-slot">
-          <img src="./Best-night.jpg" alt="Best night memory">
+          <img class="gallery-image" src="https://raw.githubusercontent.com/therealxo000-bit/my-lady-s-birthday-/main/Best%20night.jpeg" alt="Best night">
         </div>
         <div class="caption">best night</div>
       </div>
+
       <div class="polaroid">
         <div class="photo-slot">
-          <img src="./my-cutiee-pie.jpg" alt="Cute memory together">
+          <img class="gallery-image" src="https://raw.githubusercontent.com/therealxo000-bit/my-lady-s-birthday-/main/my%20cutiee%20pie%20🥰.jpeg" alt="My cutiee pie">
         </div>
         <div class="caption">my cutiee pie</div>
       </div>
@@ -1113,6 +1192,12 @@
   </div>
 </div>
 
+<div class="image-viewer" id="imageViewer">
+  <button class="viewer-close" id="viewerClose" aria-label="Close image viewer">&times;</button>
+  <img id="viewerImage" src="" alt="Full screen memory">
+  <div class="viewer-hint">Tap outside image to close</div>
+</div>
+
 <script>
   const correctPassword = "2304";
   const passwordInput = document.getElementById('passwordInput');
@@ -1126,6 +1211,10 @@
 
   const yesBtn = document.getElementById('yesBtn');
   const introActions = document.getElementById('introActions');
+
+  const imageViewer = document.getElementById('imageViewer');
+  const viewerImage = document.getElementById('viewerImage');
+  const viewerClose = document.getElementById('viewerClose');
 
   let yesEscapeCount = 0;
   const maxEscapes = 6;
@@ -1250,6 +1339,63 @@
 
   document.querySelectorAll('.flip-card').forEach(card => {
     card.addEventListener('click', () => card.classList.toggle('flipped'));
+  });
+
+  function openImageViewer(src, alt) {
+    viewerImage.src = src;
+    viewerImage.alt = alt || 'Full screen image';
+    imageViewer.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeImageViewer() {
+    imageViewer.classList.remove('show');
+    viewerImage.src = '';
+    document.body.style.overflow = '';
+  }
+
+  document.querySelectorAll('.gallery-image').forEach(img => {
+    let pressTimer = null;
+    let longPressTriggered = false;
+
+    const startPress = () => {
+      longPressTriggered = false;
+      pressTimer = setTimeout(() => {
+        longPressTriggered = true;
+        openImageViewer(img.src, img.alt);
+      }, 450);
+    };
+
+    const cancelPress = () => {
+      clearTimeout(pressTimer);
+    };
+
+    img.addEventListener('touchstart', startPress, { passive: true });
+    img.addEventListener('touchend', cancelPress);
+    img.addEventListener('touchmove', cancelPress);
+    img.addEventListener('touchcancel', cancelPress);
+
+    img.addEventListener('click', (e) => {
+      if (longPressTriggered) {
+        e.preventDefault();
+        return;
+      }
+      openImageViewer(img.src, img.alt);
+    });
+  });
+
+  viewerClose.addEventListener('click', closeImageViewer);
+
+  imageViewer.addEventListener('click', (e) => {
+    if (e.target === imageViewer) {
+      closeImageViewer();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeImageViewer();
+    }
   });
 </script>
 
